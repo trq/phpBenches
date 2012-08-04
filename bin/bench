@@ -1,0 +1,143 @@
+#!/usr/bin/php
+
+<?php
+
+if (!function_exists("xhprof_enable"))
+    die("php5-xhprof not found\n");
+if (!function_exists("apc_add"))
+    die("php5-apc not found\n");
+if (!function_exists("curl_close"))
+    die("php5-curl not found\n");
+if (!function_exists("imagecopy"))
+    die("php5-gd not found\n");
+if (!class_exists("Locale"))
+    die("php5-intl not found\n");
+
+$opt = getopt("c:n:d:");
+$gc = isset($opt['c']) ? $opt['c'] : 10;
+$gn = isset($opt['n']) ? $opt['n'] : 1000;
+
+if (!isset($opt['d'])) {
+    die("The -d option must be provided\n");
+} else {
+    $dir = $opt['d'];
+    if (!is_dir($dir)) {
+        mkdir($dir);
+    }
+}
+
+$al = require realpath(dirname(__FILE__)) . '/../config.php';
+
+$a = array_keys($al);
+
+$rs = [];
+$output = '';
+$count = 3;
+for ($i = 0; $i < $count; $i++) {
+
+    foreach ($a as $v) {
+
+        shell_exec("/etc/init.d/apache2 restart");
+        do {
+            sleep(60);
+            $loadavg = strstr(shell_exec('cat /proc/loadavg'), ' ', true);
+        } while ($loadavg > 0.05);
+
+        echo "Testing $v\n";
+
+        $memuse = 0;
+        $time   = 0;
+        $funcal = 0;
+        $files  = 0;
+        $o = shell_exec("curl -X GET \"http://{$v}.bench/?debug=1\""); usleep(300000);// Caching
+        $o = shell_exec("curl -X GET --ignore-content-length \"http://{$v}.bench/?debug=1\"");
+        if (preg_match("/in \<b\>(.*?) ms(.*?)\<b\>(.*?) KB(.*?)files: (.*?),(.*?)\<a href=\"(.*?)\"/", $o, $mat)) {
+            $memuse = $mat[3];
+            $time   = $mat[1];
+            $files  = $mat[5];
+        }
+
+        $o = shell_exec("ab -c $gc -n $gn -H \"Connection: close\" \"http://{$v}.bench/\"");
+        if (preg_match("/Requests\ per\ second:\ +(.*?)\[/", $o, $mat)) {
+            $loadavg = strstr(shell_exec('cat /proc/loadavg'), ' ', true);
+            $rs[$v][] = [$mat[1], $loadavg, $memuse, $time, $funcal, $files];
+        }
+    }
+}
+
+$output .= sprintf("%12s QPS, LOAD, MEM(KB), TIME(ms); functions, include files\n", 'framework');
+$rsm = [];
+foreach ($rs as $k => $v) {
+    $output .= sprintf("%12s ", $k);
+    $rqsvg = 0;
+    $loadavg = 0;
+    $memuse = 0;
+    $time   = 0;
+    $funcal = 0;
+    $files  = 0;
+    foreach ($v as $v2) {
+        $rqsvg += $v2[0];
+        $loadavg += $v2[1];
+        $memuse += $v2[2];
+        $time += $v2[3];
+        $funcal = $v2[4];
+        $files  = $v2[5];
+        $output .= sprintf("%8d,%5.2f,%7.2f,%6.2f;", $v2[0], $v2[1], $v2[2], $v2[3]);
+    }
+    $output .= sprintf("%8d,%5.2f,%7.2f,%6.2f;  %5d,%5d\n", $rqsvg/$count, $loadavg/$count, $memuse/$count, $time/$count, $funcal, $files);
+    $rsm['qps'][$al[$k]] = intval($rqsvg/$count);
+    $rsm['load'][$al[$k]] = round($loadavg/$count, 2);
+    $rsm['memuse'][$al[$k]] = round($memuse/$count, 2);
+    $rsm['time'][$al[$k]] = round($time/$count, 2);
+    $rsm['funcal'][$al[$k]] = $funcal;
+    $rsm['files'][$al[$k]] = $files;
+}
+
+echo $output;
+
+require realpath(dirname(__FILE__)) . '/../lib/phpgraphlib/phpgraphlib.php';
+
+foreach ($rsm as $k => $v) {
+    switch ($k) {
+    case 'qps':
+        $graph = new PHPGraphLib(800,450, $dir . "/request-per-second.png");
+        $graph->addData($rsm['qps']);
+        $graph->setTitle("ApacheBench (ab -c {$gc} -n {$gn})");
+        break;
+    case 'load':
+        $graph = new PHPGraphLib(800,450, $dir . "/loadavg.png");
+        $graph->addData($rsm['load']);
+        $graph->setTitle("System LoadAvg in 1 Minute (ab -c {$gc} -n {$gn})");
+        break;
+    case 'memuse':
+        $graph = new PHPGraphLib(800,450, $dir . "/memory-usage.png");
+        $graph->addData($rsm['memuse']);
+        $graph->setTitle("Memory Usage (KB)");
+        break;
+    case 'files':
+        $graph = new PHPGraphLib(800,450, $dir . "/number-of-files.png");
+        $graph->addData($rsm['files']);
+        $graph->setTitle("Number of files been included or required");
+        break;
+    case 'funcal':
+        $graph = new PHPGraphLib(800,450, $dir . "/number-of-function-calls.png");
+        $graph->addData($rsm['funcal']);
+        $graph->setTitle("Number fo function calls");
+        break;
+    case 'time':
+        $graph = new PHPGraphLib(800,450, $dir . "/response-time.png");
+        $graph->addData($rsm['time']);
+        $graph->setTitle("Response Time (Millisecond)");
+        break;
+    default:
+        continue;
+    }
+
+    $graph->setTitleLocation('left');
+    $graph->setBarColor('255,102,51');
+    $graph->setDataValues(true);
+    $graph->setXValuesHorizontal(true);
+    $graph->setupXAxis(20, '');
+    $graph->createGraph();
+
+}

@@ -1,0 +1,15 @@
+{
+  "name": "trq/phpbenches",
+  "description": "Simple benchmarks of popular PHP frameworks",
+  "keywords": ["PHP","Frameworks", "Benchmarking"],
+  "homepage": "https://github.com/trq/phpbenches",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Tony R Quilkey",
+      "email": "trq@proemframework.org",
+      "homepage": "http://thorpesystems.com"
+    }
+  ]
+}
