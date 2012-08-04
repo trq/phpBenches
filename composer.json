@@ -11,5 +11,8 @@
       "email": "trq@proemframework.org",
       "homepage": "http://thorpesystems.com"
     }
-  ]
+  ],
+  "require": {
+    "proem/proem": "0.6.0"
+  }
 }
