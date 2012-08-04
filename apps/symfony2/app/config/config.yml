@@ -1,0 +1,22 @@
+imports:
+    - { resource: parameters.ini }
+#    - { resource: security.yml }
+
+framework:
+    #esi:             ~
+    #translator:      { fallback: %locale% }
+    secret:          %secret%
+    charset:         UTF-8
+    router:          { resource: "%kernel.root_dir%/config/routing.yml" }
+    form:            false
+    csrf_protection: false
+    validation:      { enable_annotations: false }
+    templating:      { engines: ['php'] } #assets_version: SomeVersionScheme
+    session:
+        default_locale: %locale%
+        auto_start:     false
+
+# Twig Configuration
+#twig:
+#    debug:            %kernel.debug%
+#    strict_variables: %kernel.debug%
