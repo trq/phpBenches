@@ -13,12 +13,13 @@ if (!function_exists("imagecopy"))
 if (!class_exists("Locale"))
     die("php5-intl not found\n");
 
-$opt = getopt("c:n:d:");
-$gc = isset($opt['c']) ? $opt['c'] : 10;
-$gn = isset($opt['n']) ? $opt['n'] : 1000;
+$opt = getopt("qc:n:d:");
+$gc = isset($opt['c']) ? $opt['c'] : 100;
+$gn = isset($opt['n']) ? $opt['n'] : 3000;
+$quick = isset($opt['q']) ? true : false;
 
 if (!isset($opt['d'])) {
-    die("The -d option must be provided\n");
+    $skip_create = true;
 } else {
     $dir = $opt['d'];
     if (!is_dir($dir)) {
@@ -37,11 +38,13 @@ for ($i = 0; $i < $count; $i++) {
 
     foreach ($a as $v) {
 
-        shell_exec("sudo /etc/init.d/apache2 restart");
-        do {
-            sleep(60);
-            $loadavg = strstr(shell_exec('cat /proc/loadavg'), ' ', true);
-        } while ($loadavg > 0.05);
+        if (!$quick) {
+            shell_exec("sudo /etc/init.d/apache2 restart");
+            do {
+                sleep(60);
+                $loadavg = strstr(shell_exec('cat /proc/loadavg'), ' ', true);
+            } while ($loadavg > 0.05);
+        }
 
         echo "Testing $v\n";
 
@@ -56,9 +59,10 @@ for ($i = 0; $i < $count; $i++) {
             $time   = $mat[1];
             $files  = $mat[5];
             $o = shell_exec("curl -X GET \"".urldecode($mat[7])."\"");
-            if (preg_match("/Number of Function Calls(.*?)\<td\>(.*?)\<\/td/", $o, $mat2) && preg_match("/href=\"(.*?)\"\>\[View Full Callgraph/", $o, $mat3))
-            {
-                copy("http://xhprof.bench/".$mat3[1], "{$dir}/{$v}-funtion-map.png");
+            if (preg_match("/Number of Function Calls(.*?)\<td\>(.*?)\<\/td/", $o, $mat2) && preg_match("/href=\"(.*?)\"\>\[View Full Callgraph/", $o, $mat3)) {
+                if (!$skip_create) {
+                    copy("http://xhprof.bench/".$mat3[1], "{$dir}/{$v}-funtion-map.png");
+                }
                 $funcal = str_replace([",", " "], ["", ""], $mat2[2]);
             }
         }
@@ -103,47 +107,49 @@ echo $output;
 
 require realpath(dirname(__FILE__)) . '/../lib/phpgraphlib/phpgraphlib.php';
 
-foreach ($rsm as $k => $v) {
-    switch ($k) {
-    case 'qps':
-        $graph = new PHPGraphLib(800,450, $dir . "/request-per-second.png");
-        $graph->addData($rsm['qps']);
-        $graph->setTitle("ApacheBench (ab -c {$gc} -n {$gn})");
-        break;
-    case 'load':
-        $graph = new PHPGraphLib(800,450, $dir . "/loadavg.png");
-        $graph->addData($rsm['load']);
-        $graph->setTitle("System LoadAvg in 1 Minute (ab -c {$gc} -n {$gn})");
-        break;
-    case 'memuse':
-        $graph = new PHPGraphLib(800,450, $dir . "/memory-usage.png");
-        $graph->addData($rsm['memuse']);
-        $graph->setTitle("Memory Usage (KB)");
-        break;
-    case 'files':
-        $graph = new PHPGraphLib(800,450, $dir . "/number-of-files.png");
-        $graph->addData($rsm['files']);
-        $graph->setTitle("Number of files been included or required");
-        break;
-    case 'funcal':
-        $graph = new PHPGraphLib(800,450, $dir . "/number-of-function-calls.png");
-        $graph->addData($rsm['funcal']);
-        $graph->setTitle("Number fo function calls");
-        break;
-    case 'time':
-        $graph = new PHPGraphLib(800,450, $dir . "/response-time.png");
-        $graph->addData($rsm['time']);
-        $graph->setTitle("Response Time (Millisecond)");
-        break;
-    default:
-        continue;
+if (!$skip_create) {
+    foreach ($rsm as $k => $v) {
+        switch ($k) {
+        case 'qps':
+            $graph = new PHPGraphLib(800,450, $dir . "/request-per-second.png");
+            $graph->addData($rsm['qps']);
+            $graph->setTitle("ApacheBench (ab -c {$gc} -n {$gn})");
+            break;
+        case 'load':
+            $graph = new PHPGraphLib(800,450, $dir . "/loadavg.png");
+            $graph->addData($rsm['load']);
+            $graph->setTitle("System LoadAvg in 1 Minute (ab -c {$gc} -n {$gn})");
+            break;
+        case 'memuse':
+            $graph = new PHPGraphLib(800,450, $dir . "/memory-usage.png");
+            $graph->addData($rsm['memuse']);
+            $graph->setTitle("Memory Usage (KB)");
+            break;
+        case 'files':
+            $graph = new PHPGraphLib(800,450, $dir . "/number-of-files.png");
+            $graph->addData($rsm['files']);
+            $graph->setTitle("Number of files been included or required");
+            break;
+        case 'funcal':
+            $graph = new PHPGraphLib(800,450, $dir . "/number-of-function-calls.png");
+            $graph->addData($rsm['funcal']);
+            $graph->setTitle("Number fo function calls");
+            break;
+        case 'time':
+            $graph = new PHPGraphLib(800,450, $dir . "/response-time.png");
+            $graph->addData($rsm['time']);
+            $graph->setTitle("Response Time (Millisecond)");
+            break;
+        default:
+            continue;
+        }
+
+        $graph->setTitleLocation('left');
+        $graph->setBarColor('255,102,51');
+        $graph->setDataValues(true);
+        $graph->setXValuesHorizontal(true);
+        $graph->setupXAxis(20, '');
+        $graph->createGraph();
+
     }
-
-    $graph->setTitleLocation('left');
-    $graph->setBarColor('255,102,51');
-    $graph->setDataValues(true);
-    $graph->setXValuesHorizontal(true);
-    $graph->setupXAxis(20, '');
-    $graph->createGraph();
-
 }
