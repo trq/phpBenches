@@ -37,7 +37,7 @@ for ($i = 0; $i < $count; $i++) {
 
     foreach ($a as $v) {
 
-        shell_exec("/etc/init.d/apache2 restart");
+        shell_exec("sudo /etc/init.d/apache2 restart");
         do {
             sleep(60);
             $loadavg = strstr(shell_exec('cat /proc/loadavg'), ' ', true);
@@ -55,6 +55,12 @@ for ($i = 0; $i < $count; $i++) {
             $memuse = $mat[3];
             $time   = $mat[1];
             $files  = $mat[5];
+            $o = shell_exec("curl -X GET \"".urldecode($mat[7])."\"");
+            if (preg_match("/Number of Function Calls(.*?)\<td\>(.*?)\<\/td/", $o, $mat2) && preg_match("/href=\"(.*?)\"\>\[View Full Callgraph/", $o, $mat3))
+            {
+                copy("http://xhprof.bench/".$mat3[1], "{$dir}/{$v}-funtion-map.png");
+                $funcal = str_replace([",", " "], ["", ""], $mat2[2]);
+            }
         }
 
         $o = shell_exec("ab -c $gc -n $gn -H \"Connection: close\" \"http://{$v}.bench/\"");
