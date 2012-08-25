@@ -13,7 +13,7 @@
     }
   ],
   "require": {
-    "proem/proem": "0.6.2",
+    "proem/proem": "0.6.5",
     "symfony/symfony": "v2.1.0-RC1"
   }
 }
