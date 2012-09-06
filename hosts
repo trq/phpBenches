@@ -1,5 +1,6 @@
 127.0.0.1 proem.bench
 127.0.0.1 symfony2.bench
+127.0.0.1 zf2.bench
 
 # user for xhprof
 127.0.0.1 xhprof.bench

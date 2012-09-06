@@ -25,6 +25,10 @@ if (!isset($opt['d'])) {
     $dir = $opt['d'];
     if (!is_dir($dir)) {
         mkdir($dir);
+    } else {
+        foreach (glob($dir . '/*.png') as $img) {
+            unlink($img);
+        }
     }
 }
 
@@ -67,7 +71,8 @@ for ($i = 0; $i < $count; $i++) {
             $o = shell_exec("curl -X GET \"".urldecode($mat[7])."\"");
             if (preg_match("/Number of Function Calls(.*?)\<td\>(.*?)\<\/td/", $o, $mat2) && preg_match("/href=\"(.*?)\"\>\[View Full Callgraph/", $o, $mat3)) {
                 if ($create) {
-                    copy("http://xhprof.bench/".$mat3[1], "{$dir}/{$v}-funtion-map.png");
+                    echo "copying http://xhprof.bench" . $mat3[1] . " to {$dir}/{$v}-funtion-map.png\n";
+                    copy("http://xhprof.bench/" . $mat3[1], "{$dir}/{$v}-funtion-map.png");
                 }
                 $funcal = str_replace([",", " "], ["", ""], $mat2[2]);
             }
