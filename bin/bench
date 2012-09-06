@@ -39,8 +39,8 @@ for ($i = 0; $i < $count; $i++) {
 
     foreach ($a as $v) {
 
+        shell_exec("sudo /etc/init.d/apache2 restart");
         if (!$quick) {
-            shell_exec("sudo /etc/init.d/apache2 restart");
             do {
                 sleep(60);
                 $loadavg = strstr(shell_exec('cat /proc/loadavg'), ' ', true);
@@ -55,6 +55,11 @@ for ($i = 0; $i < $count; $i++) {
         $files  = 0;
         $o = shell_exec("curl -X GET \"http://{$v}.bench/?debug=1\""); usleep(300000);// Caching
         $o = shell_exec("curl -X GET --ignore-content-length \"http://{$v}.bench/?debug=1\"");
+        if (!preg_match('/Hello World/', $o)) {
+            echo "$v failed to generate 'Hello World!' page, exiting\n\n";
+            exit;
+        }
+
         if (preg_match("/in \<b\>(.*?) ms(.*?)\<b\>(.*?) KB(.*?)files: (.*?),(.*?)\<a href=\"(.*?)\"/", $o, $mat)) {
             $memuse = $mat[3];
             $time   = $mat[1];
@@ -105,6 +110,8 @@ foreach ($rs as $k => $v) {
 }
 
 echo $output;
+
+echo "\n\nhttp://benches\n\n";
 
 require realpath(dirname(__FILE__)) . '/../lib/phpgraphlib/phpgraphlib.php';
 
