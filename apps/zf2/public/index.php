@@ -10,6 +10,8 @@ include realpath(dirname(__FILE__)) . '/../../../lib/benches/pre.php';
  */
 chdir(dirname(__DIR__));
 
+define('ZF_CLASS_CACHE', 'data/cache/classes.php.cache'); if (file_exists(ZF_CLASS_CACHE)) require_once ZF_CLASS_CACHE;
+
 // Setup autoloading
 include 'init_autoloader.php';
 

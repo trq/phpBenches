@@ -57,7 +57,7 @@ for ($i = 0; $i < $count; $i++) {
         $time   = 0;
         $funcal = 0;
         $files  = 0;
-        $o = shell_exec("curl -X GET \"http://{$v}.bench/?debug=1\""); usleep(300000);// Caching
+        $o = shell_exec("curl -X GET \"http://{$v}.bench/?debug=1&EDPSUPERLUMINAL_CACHE\""); usleep(300000);// Caching
         $o = shell_exec("curl -X GET --ignore-content-length \"http://{$v}.bench/?debug=1\"");
         if (!preg_match('/Hello World/', $o)) {
             echo "$v failed to generate 'Hello World!' page, exiting\n\n";
