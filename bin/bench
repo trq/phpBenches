@@ -141,12 +141,12 @@ if ($create) {
         case 'files':
             $graph = new PHPGraphLib(800,450, $dir . "/number-of-files.png");
             $graph->addData($rsm['files']);
-            $graph->setTitle("Number of files been included or required");
+            $graph->setTitle("Number of files being included or required");
             break;
         case 'funcal':
             $graph = new PHPGraphLib(800,450, $dir . "/number-of-function-calls.png");
             $graph->addData($rsm['funcal']);
-            $graph->setTitle("Number fo function calls");
+            $graph->setTitle("Number of function calls");
             break;
         case 'time':
             $graph = new PHPGraphLib(800,450, $dir . "/response-time.png");
@@ -158,7 +158,7 @@ if ($create) {
         }
 
         $graph->setTitleLocation('left');
-        $graph->setBarColor('255,102,51');
+        $graph->setBarColor('200,31,71');
         $graph->setDataValues(true);
         $graph->setXValuesHorizontal(true);
         $graph->setupXAxis(20, '');
