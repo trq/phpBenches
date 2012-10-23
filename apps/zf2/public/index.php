@@ -1,8 +1,14 @@
 <?php
 
-// Include benches pre.
-include realpath(dirname(__FILE__)) . '/../../../lib/benches/pre.php';
-//
+require_once '../../../vendor/proem/proem/lib/Proem/Autoloader.php';
+
+(new Proem\Autoloader())
+    ->attachNamespace('Xhprof', realpath(__DIR__) . '/../../../lib')
+    ->attachNamespace('Benches', realpath(__DIR__) . '/../../../lib')
+    ->register();
+
+$profiler = new Benches\Profiler(isset($_GET['debug']));
+$profiler->pre();
 
 /**
  * This makes our life easier when dealing with paths. Everything is relative
@@ -18,6 +24,4 @@ include 'init_autoloader.php';
 // Run the application!
 Zend\Mvc\Application::init(include 'config/application.config.php')->run();
 
-// Include benches post.
-include realpath(dirname(__FILE__)) . '/../../../lib/benches/post.php';
-//
+$profiler->post();

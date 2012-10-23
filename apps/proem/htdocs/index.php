@@ -1,10 +1,14 @@
 <?php
 
-// Include benches pre.
-include realpath(dirname(__FILE__)) . '/../../../lib/benches/pre.php';
-//
-
 require_once '../../../vendor/proem/proem/lib/Proem/Autoloader.php';
+
+(new Proem\Autoloader())
+    ->attachNamespace('Xhprof', realpath(__DIR__) . '/../../../lib')
+    ->attachNamespace('Benches', realpath(__DIR__) . '/../../../lib')
+    ->register();
+
+$profiler = new Benches\Profiler(isset($_GET['debug']));
+$profiler->pre();
 
 (new Proem\Autoloader())
     ->attachNamespace('Proem', '../../../vendor/proem/proem/lib')
@@ -29,6 +33,4 @@ require_once '../../../vendor/proem/proem/lib/Proem/Autoloader.php';
     }));
 })->init();
 
-// Include benches post.
-include realpath(dirname(__FILE__)) . '/../../../lib/benches/post.php';
-//
+$profiler->post();
