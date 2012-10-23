@@ -4,4 +4,5 @@ return [
     'proem'         => 'Proem 0.6.5',
     'symfony2'      => 'Symfony 2.1.0',
     'zf2'           => 'Zend Framework 2.0.0',
+    'noframework'   => 'No Framework',
 ];
